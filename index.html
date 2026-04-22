@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Antigravity</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background-color: white; }
+        .container { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; z-index: 10; }
+        .logo { font-size: 80px; font-weight: bold; margin-bottom: 20px; letter-spacing: -3px; }
+        .logo span:nth-child(1) { color: #4285F4; }
+        .logo span:nth-child(2) { color: #EA4335; }
+        .logo span:nth-child(3) { color: #FBBC05; }
+        .logo span:nth-child(4) { color: #4285F4; }
+        .logo span:nth-child(5) { color: #34A853; }
+        .logo span:nth-child(6) { color: #EA4335; }
+        .search-bar { width: 400px; height: 40px; border: 1px solid #dfe1e5; border-radius: 24px; margin: 0 auto 20px auto; display: block; outline: none; padding: 0 20px; font-size: 16px; box-shadow: 0 1px 6px rgba(32,33,36,.28); background: white; }
+        .buttons button { background-color: #f8f9fa; border: 1px solid #f8f9fa; border-radius: 4px; color: #3c4043; cursor: pointer; font-size: 14px; margin: 11px 4px; padding: 0 16px; height: 36px; }
+        /* กำหนดคลาสสำหรับชิ้นส่วนฟิสิกส์ */
+        .box { position: absolute; user-select: none; cursor: grab; text-align: center; }
+        .box:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+
+<div id="wrapper" class="container">
+    <div class="logo box" id="logo">
+        <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+    </div>
+    <input type="text" class="search-bar box" id="search" value="Antigravity...">
+    <div class="buttons box" id="btn-group">
+        <button>Google Search</button>
+        <button>I'm Feeling Lucky</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script>
+    const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner,
+          Bodies = Matter.Bodies, Composite = Matter.Composite, Mouse = Matter.Mouse,
+          MouseConstraint = Matter.MouseConstraint;
+
+    const engine = Engine.create();
+    const world = engine.world;
+
+    // สร้างกำแพงล่องหน 4 ด้าน (ไม่ให้ของหลุดจอ)
+    const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight+50, window.innerWidth, 100, { isStatic: true });
+    const ceiling = Bodies.rectangle(window.innerWidth/2, -50, window.innerWidth, 100, { isStatic: true });
+    const wallLeft = Bodies.rectangle(-50, window.innerHeight/2, 100, window.innerHeight, { isStatic: true });
+    const wallRight = Bodies.rectangle(window.innerWidth+50, window.innerHeight/2, 100, window.innerHeight, { isStatic: true });
+    Composite.add(world, [ground, ceiling, wallLeft, wallRight]);
+
+    // ชิ้นส่วนที่เราจะทำให้เป็นฟิสิกส์
+    const elements = [
+        { id: 'logo', width: 260, height: 90 },
+        { id: 'search', width: 440, height: 42 },
+        { id: 'btn-group', width: 300, height: 50 }
+    ];
+    const bodies = [];
+
+    // เริ่มทำงานหลังผ่านไป 1 วินาที
+    setTimeout(() => {
+        elements.forEach((el) => {
+            const domNode = document.getElementById(el.id);
+            const rect = domNode.getBoundingClientRect();
+            
+            // ปลดล็อกจาก Container ปกติ
+            domNode.style.left = rect.left + 'px';
+            domNode.style.top = rect.top + 'px';
+            document.body.appendChild(domNode);
+
+            // สร้างกล่องฟิสิกส์
+            const body = Bodies.rectangle(
+                rect.left + el.width/2, rect.top + el.height/2, el.width, el.height, 
+                { restitution: 0.9, friction: 0.1, density: 0.05 }
+            );
+            
+            bodies.push({ dom: domNode, body: body });
+            Composite.add(world, body);
+        });
+
+        document.getElementById('wrapper').style.display = 'none';
+
+        // เพิ่มระบบเมาส์จับลากได้
+        const mouse = Mouse.create(document.body);
+        const mouseConstraint = MouseConstraint.create(engine, {
+            mouse: mouse, constraint: { stiffness: 0.2, render: { visible: false } }
+        });
+        Composite.add(world, mouseConstraint);
+
+        Runner.run(Runner.create(), engine);
+
+        // ซิงค์ตำแหน่ง HTML ให้ตรงกับฟิสิกส์
+        function update() {
+            bodies.forEach(item => {
+                item.dom.style.left = (item.body.position.x - item.dom.offsetWidth/2) + 'px';
+                item.dom.style.top = (item.body.position.y - item.dom.offsetHeight/2) + 'px';
+                item.dom.style.transform = `rotate(${item.body.angle}rad)`;
+            });
+            requestAnimationFrame(update);
+        }
+        update();
+
+        // ไฮไลท์หลัก: Antigravity (สลับแรงโน้มถ่วงให้ลอยขึ้น) หลังร่วงลงมา 2 วินาที
+        setTimeout(() => {
+            engine.gravity.y = -0.3; 
+        }, 2000);
+
+    }, 1000);
+</script>
+</body>
+</html>
